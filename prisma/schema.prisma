@@ -1,0 +1,135 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  // output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  USER
+  PREMIUM_USER
+}
+
+
+ 
+
+
+model User{
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  email     String   @unique
+  name      String?
+  image     String?
+  accounts  Account[]
+  role      UserRole @default(USER)
+
+  myPlayground Playground[]
+  staredPlayground StarMark[]
+  chatMessages ChatMessage[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+
+model Account {
+ id                String  @id @default(cuid()) @map("_id")
+  userId            String  @db.ObjectId @map("user_id")
+  type              String
+  provider          String
+  providerAccountId String
+  refreshToken      String? @map("refresh_token")
+  accessToken       String? @map("access_token")
+  expiresAt         Int?    @map("expires_at")
+  tokenType         String? @map("token_type")
+  scope             String?
+  idToken           String? @map("id_token")
+  sessionState      String? @map("session_state")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+enum Templates {
+  // Frontend / Fullstack (Node.js-based)
+  REACT
+  NEXTJS
+  REMIX
+  VUE
+  ANGULAR
+  SVELTE
+  NUXT
+
+  // Backend / API (Node.js-based)
+  EXPRESS
+  NESTJS
+  FASTIFY
+  HONO
+}
+
+model Playground {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  title       String
+  description String?
+  template    Templates @default(REACT)
+  code        String
+  userId      String    @db.ObjectId @map("user_id")
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  Starmark    StarMark[]   
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId])
+
+  templateFiles TemplateFile[]
+}
+
+model StarMark {
+  id          String    @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String    @db.ObjectId @map("user_id")
+  playgroundId String   @db.ObjectId @map("playground_id")
+  isMarked   Boolean   
+  createdAt   DateTime  @default(now())
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  playground  Playground @relation(fields: [playgroundId], references: [id], onDelete: Cascade)
+  @@unique([userId, playgroundId])
+ 
+}
+
+model TemplateFile {
+id String @id @default(cuid()) @map("_id")
+content Json
+createdAt DateTime @default(now())
+updatedAt DateTime @updatedAt
+playgroundId String @unique @db.ObjectId
+playground Playground @relation(fields: [playgroundId], references: [id], onDelete:Cascade)
+}
+
+model ChatMessage {
+  id  String @id @default(cuid()) @map("_id")
+  userId      String    @db.ObjectId @map("user_id")
+   role   String  // "user" or "assitant"
+  content String
+  createdAt DateTime  @default(now())
+
+  user  User @relation(fields: [userId] , references: [id] , onDelete: Cascade)
+
+  @@index([userId])
+} 
+
+
+
+
+
+
+
